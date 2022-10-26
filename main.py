@@ -23,9 +23,6 @@ def load_comma_separated_file(file_name):
 
 def profanity_filter(server_id, message):
     # check if the message contains a banned word
-    if db.get_server_settings(server_id)["AllowFilteringProfanity"] == False:
-        return False
-
     for word in message.split(" "):
         if word in PROFANITY_LIST:
             return True
@@ -99,8 +96,13 @@ async def portal(ctx, message : str):
     if channel_id is None:
         return await ctx.respond("Please set a channel first!", ephemeral=True)
     if profanity_filter(ctx.guild.id ,message):
+        profanity = True
+    if db.get_server_settings(ctx.guild.id)["AllowFilteringProfanity"] == True and profanity:
         return await ctx.respond("Profanity is not allowed!", ephemeral=True)
+
     # get all the channels from the database
+    if not check_role_permissions(ctx.guild.id, ctx.author.roles[0]):
+        return await ctx.respond("You do not have permission to use this command!", ephemeral=True)
     channels_query = db.get_channels()
     counter = 0
     for channel_query in channels_query:
@@ -129,7 +131,7 @@ async def portalinvite(ctx, max_age : int, max_uses : int):
     counter = 0
     for channel_query in channels_query:
         channel = bot.get_channel(channel_query[2])
-        if channel_query[0] != ctx.guild.id:
+        if channel_query[0] != ctx.guild.id and db.get_server_settings(channel_query[0])["AllowPortalInvites"] == True:
             await channel.send(f"Invite from **{ctx.author.name}** from  *{ctx.guild.name}* \n {invite}")
             counter += 1
     
@@ -158,7 +160,7 @@ async def settings(ctx, setting : str, value : str):
             settings["AllowFilteringProfanity"] = False
 
     elif setting == "RolesThatCanSendPortalMessages":
-        if value == "None":
+        if value == "":
             settings["RolesThatCanSendPortalMessages"] = []
         else:
             settings["RolesThatCanSendPortalMessages"] = value.split(", ")

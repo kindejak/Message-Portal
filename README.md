@@ -10,6 +10,7 @@
 - sqlite
 
 ## Invite link for the bot
+[Click Here to invite](https://discord.com/api/oauth2/authorize?client_id=776011443082493953&permissions=2049&scope=bot)
 
 ## Commands
 This bot uses slash commands, so you can use / before the command to use it.
