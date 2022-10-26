@@ -1,0 +1,6 @@
+{
+    "RolesThatCanSendPortalMessages" : [], 
+    "AllowFilteringProfanity" : true,
+    "AllowedServes" : [],
+    "AllowInvites" : true
+}
