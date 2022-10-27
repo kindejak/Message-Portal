@@ -95,8 +95,8 @@ async def portal(ctx, message : str):
     channel_id = db.get_channel(ctx.guild.id)
     if channel_id is None:
         return await ctx.respond("Please set a channel first!", ephemeral=True)
-    if profanity_filter(ctx.guild.id ,message):
-        profanity = True
+    
+    profanity = profanity_filter(ctx.guild.id, message)
     if db.get_server_settings(ctx.guild.id)["AllowFilteringProfanity"] == True and profanity:
         return await ctx.respond("Profanity is not allowed!", ephemeral=True)
 
