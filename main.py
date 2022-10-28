@@ -29,20 +29,23 @@ def profanity_filter(server_id, message):
 
     return False
 
-def check_role_permissions(server_id, role : discord.Role):
+def check_role_permissions(server_id, roles : list):
     # check if the user has the required role to use the bot
     role_permissions = db.get_server_settings(server_id)["RolesThatCanSendPortalMessages"]
     if role_permissions == []:
         return True
 
-    if role.name in role_permissions:
-        return True
+    for role in roles:
+        if role.name in role_permissions:
+            return True
 
     return False
 
 @bot.event
 async def on_ready():
     print(f"{bot.user} is ready and online!")
+
+
 
 '''
 set the channel for the bot to send messages
@@ -54,7 +57,7 @@ async def setchannel(ctx, channel: discord.TextChannel):
     if not ctx.author.guild_permissions.administrator:
         return await ctx.respond("You do not have permission to use this command!",ephemeral=True)
         
-    await ctx.respond(f"Set the channel to {channel.mention}", ephemeral=True)
+    await ctx.respond(f"I set the channel to {channel.mention}", ephemeral=True)
     # set the channel in the database
     db.set_channel(ctx.guild.id, ctx.guild.name, channel.id, channel.name)
 
@@ -101,15 +104,17 @@ async def portal(ctx, message : str):
         return await ctx.respond("Profanity is not allowed!", ephemeral=True)
 
     # get all the channels from the database
-    if not check_role_permissions(ctx.guild.id, ctx.author.roles[0]):
+    if not check_role_permissions(ctx.guild.id, ctx.author.roles):
         return await ctx.respond("You do not have permission to use this command!", ephemeral=True)
+    
     channels_query = db.get_channels()
     counter = 0
     for channel_query in channels_query:
         channel = bot.get_channel(channel_query[2])
         if channel_query[0] != ctx.guild.id:
-            await channel.send(f"Message from **{ctx.author.name}** from server :arrow_forward: *{ctx.guild.name}* :arrow_backward: : ```{message}```")
-            counter += 1
+            if not profanity or db.get_server_settings(channel_query[0])["AllowFilteringProfanity"] == False:
+                await channel.send(f"Message from **{ctx.author.name}** from server :arrow_forward: *{ctx.guild.name}* :arrow_backward: : ```{message}```")
+                counter += 1
     
     await ctx.respond(f"done. I sent message \"{message}\" to {counter} servers.")
 
@@ -125,13 +130,12 @@ async def portalinvite(ctx, max_age : int, max_uses : int):
         return await ctx.respond("Please set a channel first!", ephemeral=True)
 
     channel = bot.get_channel(channel_id[2])
-    print(channel)
     invite = await channel.create_invite(max_age=max_age, max_uses=max_uses)
-    channels_query = db.get_channels()
+    channels_querys = db.get_channels()
     counter = 0
-    for channel_query in channels_query:
+    for channel_query in channels_querys:
         channel = bot.get_channel(channel_query[2])
-        if channel_query[0] != ctx.guild.id and db.get_server_settings(channel_query[0])["AllowPortalInvites"] == True:
+        if channel_query[0] != ctx.guild.id and db.get_server_settings(channel_query[0])["AllowInvites"] == True:
             await channel.send(f"Invite from **{ctx.author.name}** from  *{ctx.guild.name}* \n {invite}")
             counter += 1
     
@@ -165,9 +169,28 @@ async def settings(ctx, setting : str, value : str):
         else:
             settings["RolesThatCanSendPortalMessages"] = value.split(", ")
 
+    elif setting == "AllowInvites":
+        if value not in ["True", "False"]:
+            return await ctx.respond(f"Value {value} is not valid!", ephemeral=True)
+        if value == "True":
+            settings["AllowInvites"] = True 
+        else:
+            settings["AllowInvites"] = False
+
+    elif setting == "AllowedServers":
+        if value == "":
+            settings["AllowedServers"] = []
+        else:
+            settings["AllowedServers"] = value.split(", ")
+    else:
+        return await ctx.respond(f"Setting {setting} does not exist!", ephemeral=True)
+
     # set the value in the database
     db.set_server_settings(ctx.guild.id, settings)
-    await ctx.respond(f"done", ephemeral=True)
+    return await ctx.respond(f"done", ephemeral=True)
+
+
+
 """
 Show settings - this command allows you to show the settings of the bot
 """

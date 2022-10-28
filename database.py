@@ -13,13 +13,13 @@ class Database:
 
     def create_table_channels(self):
         c = self.conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS channels (server_id INTEGER, server_name TEXT, channel_id INTEGER, channel_name TEXT)")
+        c.execute("CREATE TABLE IF NOT EXISTS channels (server_id INTEGER, server_name TEXT, channel_id INTEGER, channel_name TEXT, PRIMARY KEY (server_id))")
         self.conn.commit()
         c.close()
 
     def create_table_server_settings(self):
         c = self.conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS server_settings (server_id INTEGER, settings TEXT)")
+        c.execute("CREATE TABLE IF NOT EXISTS server_settings (server_id INTEGER, settings TEXT, PRIMARY KEY (server_id))")
         self.conn.commit()
         c.close()
 
